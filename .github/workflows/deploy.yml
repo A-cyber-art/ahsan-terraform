@@ -32,6 +32,34 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Import existing AWS resources
+        run: |
+          terraform import aws_ecr_repository.employee_app employee-app || true
+          terraform import aws_ecs_cluster.employee_cluster employee-cluster || true
+          terraform import aws_iam_role.ecs_execution_role employee-ecs-execution-role || true
+
+          terraform import aws_iam_role_policy_attachment.ecs_execution_policy \
+            "employee-ecs-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" || true
+
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters Name=group-name,Values=employee-ecs-sg \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text)
+
+          terraform import aws_security_group.ecs_sg "$SG_ID" || true
+
+          TASK_DEF=$(aws ecs list-task-definitions \
+            --family-prefix employee-app \
+            --status ACTIVE \
+            --sort DESC \
+            --query 'taskDefinitionArns[0]' \
+            --output text)
+
+          terraform import aws_ecs_task_definition.employee_task "$TASK_DEF" || true
+
+          terraform import aws_ecs_service.employee_service \
+            "employee-cluster/employee-service" || true
+
       - name: Terraform Plan
         run: terraform plan
 
