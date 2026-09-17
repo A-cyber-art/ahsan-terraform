@@ -38,9 +38,7 @@ jobs:
       - name: Import existing AWS resources
         run: |
           terraform -chdir=envs/dev import 'module.ecs.aws_ecr_repository.employee_app' employee-app || true
-
           terraform -chdir=envs/dev import 'module.ecs.aws_ecs_cluster.employee_cluster' employee-cluster || true
-
           terraform -chdir=envs/dev import 'module.ecs.aws_iam_role.ecs_execution_role' employee-ecs-execution-role || true
 
           terraform -chdir=envs/dev import 'module.ecs.aws_iam_role_policy_attachment.ecs_execution_policy' \
